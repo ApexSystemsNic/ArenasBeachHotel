@@ -1,0 +1,19 @@
+# Secrets and per-machine settings — never uploaded
+.env
+.secret_key
+print_agent.env
+
+# Generated data
+backups/
+reports/
+cloud_sync_reports/
+logs/
+print_agent.log
+*.db
+*.db-*
+
+__pycache__/
+*.pyc
+
+# Local Claude Code settings
+.claude/
