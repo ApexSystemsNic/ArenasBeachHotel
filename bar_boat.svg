@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 1000" preserveAspectRatio="none">
+  <!-- The boat bar seen from above at an angle: painted hull with a visible
+       side band (the "3D" depth), wooden deck, and the bar counter running
+       around the bartender's well in the middle. Drawn lengthwise and turned
+       upright (bow pointing down) by the <g> transform below; stretched to fit
+       its box on the table map, so seat chips placed around it line up. -->
+  <g transform="rotate(90) translate(0,-420)">
+  <defs>
+    <linearGradient id="hullSide" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1e3a5f"/>
+      <stop offset="0.5" stop-color="#274b78"/>
+      <stop offset="1" stop-color="#132741"/>
+    </linearGradient>
+    <linearGradient id="gunwale" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#dfe7ef"/>
+    </linearGradient>
+    <linearGradient id="deck" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#d9a868"/>
+      <stop offset="1" stop-color="#b98447"/>
+    </linearGradient>
+    <linearGradient id="counter" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7a4a24"/>
+      <stop offset="1" stop-color="#4e2e14"/>
+    </linearGradient>
+    <pattern id="planks" width="1000" height="22" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="21" x2="1000" y2="21" stroke="#8f6232" stroke-width="2" opacity="0.45"/>
+    </pattern>
+    <filter id="shadow" x="-10%" y="-10%" width="120%" height="140%">
+      <feGaussianBlur stdDeviation="10"/>
+    </filter>
+    <clipPath id="deckClip">
+      <path d="M95 175 C95 95 190 62 320 62 L745 62 C835 62 915 120 948 175 C915 230 835 288 745 288 L320 288 C190 288 95 255 95 175 Z"/>
+    </clipPath>
+  </defs>
+
+  <!-- shadow cast on the sand -->
+  <path d="M70 230 C70 130 180 95 330 95 L760 95 C865 95 955 170 990 240 C955 310 865 395 760 395 L330 395 C180 395 70 330 70 230 Z"
+        fill="#000" opacity="0.22" filter="url(#shadow)"/>
+
+  <!-- hull side (the depth you see below the deck edge) -->
+  <path d="M60 175 C60 75 175 30 325 30 L755 30 C860 30 950 105 990 175 C960 265 870 385 755 385 L325 385 C175 385 60 320 60 175 Z"
+        fill="url(#hullSide)"/>
+  <!-- red waterline stripe -->
+  <path d="M75 250 C110 330 200 368 325 368 L755 368 C850 368 925 300 962 245"
+        fill="none" stroke="#c0392b" stroke-width="10" opacity="0.9"/>
+
+  <!-- gunwale (white rim) -->
+  <path d="M60 175 C60 75 175 30 325 30 L755 30 C860 30 950 105 990 175 C950 245 860 320 755 320 L325 320 C175 320 60 275 60 175 Z"
+        fill="url(#gunwale)"/>
+
+  <!-- wooden deck with planks -->
+  <path d="M95 175 C95 95 190 62 320 62 L745 62 C835 62 915 120 948 175 C915 230 835 288 745 288 L320 288 C190 288 95 255 95 175 Z"
+        fill="url(#deck)"/>
+  <rect x="0" y="0" width="1000" height="420" fill="url(#planks)" clip-path="url(#deckClip)"/>
+
+  <!-- bar counter ring around the bartender's well -->
+  <rect x="215" y="98" width="560" height="154" rx="70" fill="url(#counter)"/>
+  <rect x="222" y="104" width="546" height="18" rx="9" fill="#9c6a3c" opacity="0.8"/>
+  <rect x="265" y="138" width="460" height="74" rx="37" fill="#e8d3b0"/>
+
+  <!-- bottles and glasses behind the bar -->
+  <g opacity="0.95">
+    <circle cx="330" cy="175" r="11" fill="#2e7d32"/><circle cx="360" cy="175" r="11" fill="#8d6e63"/>
+    <circle cx="390" cy="175" r="11" fill="#f9a825"/><circle cx="420" cy="175" r="11" fill="#1565c0"/>
+    <circle cx="570" cy="175" r="11" fill="#6d4c41"/><circle cx="600" cy="175" r="11" fill="#c62828"/>
+    <circle cx="630" cy="175" r="11" fill="#2e7d32"/><circle cx="660" cy="175" r="11" fill="#fbc02d"/>
+    <circle cx="495" cy="175" r="22" fill="#fff" stroke="#b0bec5" stroke-width="4"/>
+  </g>
+
+  <!-- small mast/flag at the bow -->
+  <circle cx="880" cy="175" r="12" fill="#5d4037"/>
+  <path d="M880 175 L880 118 L930 132 L880 146 Z" fill="#e53935" opacity="0.9"/>
+  </g>
+</svg>

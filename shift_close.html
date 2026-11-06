@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cierre de Turno — {{ shift.user_name }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/mobile.css">
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  @page { size: letter; margin: 10mm; }
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; padding: 0 !important; min-height: 0 !important; }
+    .doc { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important;
+           border-radius: 0 !important; font-size: 11px !important; }
+    .doc .text-sm { font-size: 11px !important; }
+    .doc .text-xs { font-size: 10px !important; }
+    tr { break-inside: avoid; }
+  }
+  .field-label { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-100 py-4 sm:py-8 px-2 sm:px-4">
+  {% set s = shift.summary %}
+  <div class="max-w-3xl mx-auto mb-4 flex flex-wrap justify-end gap-2 no-print">
+    <button id="printBtn" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded-md">Imprimir / Guardar como PDF</button>
+    <button id="closeBtn" class="border border-slate-300 text-slate-600 text-sm font-semibold px-4 py-2 rounded-md">Cerrar</button>
+  </div>
+
+  <div class="doc max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-8 text-sm">
+    <div class="flex items-center justify-between gap-4 border-b-2 border-slate-800 pb-3 mb-4">
+      <img src="/static/logo.png" alt="Arenas Beach Hotel" class="h-12 w-auto">
+      <div class="text-right">
+        <h1 class="text-lg font-extrabold italic text-slate-900">CIERRE DE TURNO</h1>
+        <p class="text-xs text-slate-500">Restaurante · Arenas Beach Hotel</p>
+      </div>
+    </div>
+
+    {% if not shift.closed_at %}
+    <p class="mb-3 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-bold text-amber-800">VISTA PREVIA — el turno sigue abierto; las cifras pueden cambiar.</p>
+    {% endif %}
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 border border-slate-300 rounded-md p-3 mb-4">
+      <div class="flex justify-between"><span class="field-label">Cajera</span><span class="font-bold">{{ shift.user_name }}</span></div>
+      <div class="flex justify-between"><span class="field-label">Turno N.º</span><span class="font-bold">{{ '%05d'|format(shift.id) }}</span></div>
+      <div class="flex justify-between"><span class="field-label">Inicio</span><span class="font-semibold">{{ fmt(shift.opened_at) }}</span></div>
+      <div class="flex justify-between"><span class="field-label">Cierre</span><span class="font-semibold">{{ fmt(shift.closed_at) or '— (abierto)' }}</span></div>
+      <div class="flex justify-between"><span class="field-label">Cuentas cerradas</span><span class="font-bold">{{ s.order_count }}</span></div>
+      <div class="flex justify-between"><span class="field-label">Fondo inicial</span><span class="font-semibold">C${{ '{:,.2f}'.format(shift.opening_cash) }}</span></div>
+    </div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mb-5">
+      <div>
+        <p class="field-label mb-1">Totales por método de pago</p>
+        <table class="w-full text-sm">
+          <tbody>
+            {% for m in s.methods %}
+            <tr class="border-b border-slate-100"><td class="py-1">{{ m.label }}</td><td class="py-1 text-center text-slate-500">{{ m.count }}</td><td class="py-1 text-right">C${{ '{:,.2f}'.format(m.amount) }}</td></tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr class="border-t-2 border-slate-800 font-extrabold"><td class="pt-1">Cobrado</td><td></td><td class="pt-1 text-right">C${{ '{:,.2f}'.format(s.collected_total) }}</td></tr>
+          </tfoot>
+        </table>
+        <p class="text-[10px] text-slate-400 mt-1">Cobrado = efectivo + tarjeta. Cargo a habitación y cortesías se muestran por su valor; no entran a caja.</p>
+      </div>
+      <div>
+        <p class="field-label mb-1">Arqueo de efectivo</p>
+        <div class="space-y-1">
+          <div class="flex justify-between"><span>Fondo inicial</span><span>C${{ '{:,.2f}'.format(shift.opening_cash) }}</span></div>
+          <div class="flex justify-between"><span>+ Efectivo cobrado</span><span>C${{ '{:,.2f}'.format(s.methods[0].amount) }}</span></div>
+          <div class="flex justify-between border-t border-slate-300 pt-1 font-bold"><span>Efectivo esperado</span><span>C${{ '{:,.2f}'.format(s.expected_cash) }}</span></div>
+          {% if s.counted_cash is defined %}
+          <div class="flex justify-between"><span>Efectivo contado</span><span class="font-bold">C${{ '{:,.2f}'.format(s.counted_cash) }}</span></div>
+          <div class="flex justify-between font-bold {{ 'text-emerald-700' if s.cash_difference == 0 else 'text-rose-700' }}">
+            <span>{{ 'Sobrante' if s.cash_difference > 0 else ('Faltante' if s.cash_difference < 0 else 'Diferencia') }}</span>
+            <span>C${{ '{:,.2f}'.format(s.cash_difference|abs) }}</span></div>
+          {% else %}
+          <div class="flex justify-between text-slate-400"><span>Efectivo contado</span><span>________________</span></div>
+          {% endif %}
+        </div>
+        {% if s.open_accounts %}
+        <p class="text-xs text-amber-700 mt-2">Cuentas abiertas en el restaurante al cierre: {{ s.open_accounts }} (C${{ '{:,.2f}'.format(s.open_accounts_total) }}).</p>
+        {% endif %}
+      </div>
+    </div>
+
+    <p class="field-label mb-1">Cuentas cerradas en el turno</p>
+    {% if s.orders %}
+    <div class="overflow-x-auto mb-4">
+    <table class="w-full text-xs">
+      <thead><tr class="border-y border-slate-800 text-slate-600 text-left">
+        <th class="py-1 pr-2 font-semibold">Recibo</th><th class="py-1 pr-2 font-semibold">Ingreso</th><th class="py-1 pr-2 font-semibold">Cierre</th>
+        <th class="py-1 pr-2 font-semibold">Cliente / Mesa</th><th class="py-1 pr-2 font-semibold">Mesero</th>
+        <th class="py-1 pr-2 font-semibold">Método</th><th class="py-1 font-semibold text-right">Monto</th>
+      </tr></thead>
+      <tbody>
+        {% for o in s.orders %}
+        <tr class="border-b border-slate-100">
+          <td class="py-1 pr-2 font-mono">{{ o.receipt_number }}</td>
+          <td class="py-1 pr-2 whitespace-nowrap">{{ o.opened_at[11:16] }}</td>
+          <td class="py-1 pr-2 whitespace-nowrap">{{ o.closed_at[11:16] }}</td>
+          <td class="py-1 pr-2">{{ o.who }}{% if o.table_number %} · Mesa {{ o.table_number }}{% endif %}</td>
+          <td class="py-1 pr-2">{{ o.server_name }}</td>
+          <td class="py-1 pr-2">{{ o.method }}</td>
+          <td class="py-1 text-right whitespace-nowrap">C${{ '{:,.2f}'.format(o.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    </div>
+    {% else %}
+    <p class="text-sm text-slate-400 mb-4">No cerró ninguna cuenta en este turno.</p>
+    {% endif %}
+
+    {% if s.pending_orders %}
+    <p class="field-label mb-1">Cuentas sin cobrar — pasan al siguiente turno</p>
+    <div class="overflow-x-auto mb-4">
+    <table class="w-full text-xs">
+      <thead><tr class="border-y border-slate-800 text-slate-600 text-left">
+        <th class="py-1 pr-2 font-semibold">Recibo</th><th class="py-1 pr-2 font-semibold">Ingreso</th>
+        <th class="py-1 pr-2 font-semibold">Mesa</th><th class="py-1 pr-2 font-semibold">Cliente</th>
+        <th class="py-1 pr-2 font-semibold">Mesero</th><th class="py-1 font-semibold text-right">Monto</th>
+      </tr></thead>
+      <tbody>
+        {% for o in s.pending_orders %}
+        <tr class="border-b border-slate-100">
+          <td class="py-1 pr-2 font-mono">{{ o.receipt_number }}</td>
+          <td class="py-1 pr-2 whitespace-nowrap">{{ fmt(o.opened_at) }}</td>
+          <td class="py-1 pr-2">{{ o.table_number or '—' }}</td>
+          <td class="py-1 pr-2">{{ o.who }}</td>
+          <td class="py-1 pr-2">{{ o.server_name }}</td>
+          <td class="py-1 text-right whitespace-nowrap">C${{ '{:,.2f}'.format(o.amount) }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot><tr class="border-t-2 border-slate-800 font-bold"><td colspan="5" class="pt-1">Total pendiente</td>
+        <td class="pt-1 text-right">C${{ '{:,.2f}'.format(s.open_accounts_total) }}</td></tr></tfoot>
+    </table>
+    </div>
+    {% endif %}
+
+    {% if shift.notes %}<p class="text-sm mb-4"><span class="field-label">Notas:</span> {{ shift.notes }}</p>{% endif %}
+
+    <div class="grid grid-cols-2 gap-10 mt-10 text-center text-xs text-slate-500">
+      <div><p class="border-t border-slate-400 pt-1">Firma cajera</p></div>
+      <div><p class="border-t border-slate-400 pt-1">Firma supervisor(a)</p></div>
+    </div>
+    <p class="text-[10px] text-slate-400 mt-6">Emitido el {{ issued_display }}</p>
+  </div>
+
+<script nonce="{{ csp_nonce }}">
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('closeBtn').addEventListener('click', () => window.close());
+  if (new URLSearchParams(location.search).get('print') === '1') window.addEventListener('load', () => setTimeout(() => window.print(), 400));
+</script>
+</body>
+</html>

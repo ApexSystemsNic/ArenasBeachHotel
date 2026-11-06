@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Confirmación de Reservación — {{ guest.name }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/mobile.css">
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  @page { size: letter; margin: 10mm; }
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; padding: 0 !important; min-height: 0 !important; }
+    .doc { box-shadow: none !important; margin: 0 !important; padding: 0 !important; max-width: none !important;
+           border-radius: 0 !important; font-size: 11px !important; }
+    .doc .text-sm { font-size: 11px !important; }
+    .doc .text-xs { font-size: 10px !important; }
+    .policies { font-size: 9.5px !important; padding: 8px 10px !important; }
+    .stay-table tbody { break-inside: avoid; }
+  }
+  .field-label { font-size: 10px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.03em; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-100 py-4 sm:py-8 px-2 sm:px-4">
+
+  <div class="max-w-3xl mx-auto mb-4 flex flex-wrap justify-end gap-2 no-print">
+    <button id="printBtn" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded-md">Imprimir / Guardar como PDF</button>
+    <a href="/guests/{{ guest.id }}/confirmation.docx" class="border border-sky-300 text-sky-700 hover:bg-sky-50 text-sm font-semibold px-4 py-2 rounded-md">Descargar Word</a>
+    <button id="closeBtn" class="border border-slate-300 text-slate-600 text-sm font-semibold px-4 py-2 rounded-md">Cerrar</button>
+  </div>
+
+  <div class="doc max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-8 text-sm">
+    {% include '_doc_header.html' %}
+
+    <div class="flex items-end justify-between gap-3 mt-5 mb-1">
+      <h1 class="text-base sm:text-lg font-extrabold italic text-slate-900 tracking-wide">HOTEL RESERVATION GUARANTEED</h1>
+      <p class="text-xs text-slate-500 whitespace-nowrap">Date: <strong class="text-slate-900">{{ created_display }}</strong></p>
+    </div>
+    {% if guest.status == 'cancelled' %}
+    <p class="mb-2 rounded-md border border-red-300 bg-red-50 px-3 py-1.5 text-xs font-bold text-red-700">RESERVACIÓN CANCELADA</p>
+    {% endif %}
+
+    <!-- Reservation header -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 border-y-2 border-slate-800 mb-5 text-sm">
+      <div class="py-1.5 sm:pr-4 space-y-1">
+        <div class="flex gap-3"><span class="field-label w-24 shrink-0">Name</span><span class="font-bold text-slate-900">{{ guest.name }}</span></div>
+        <div class="flex gap-3"><span class="field-label w-24 shrink-0">Attention</span><span class="text-slate-900">{{ guest.email or '' }}{{ ' · ' if guest.email and guest.phone else '' }}{{ guest.phone or '' }}</span></div>
+        <div class="flex gap-3"><span class="field-label w-24 shrink-0">Company</span><span class="font-bold text-slate-900">DIRECTOS</span></div>
+      </div>
+      <div class="py-1.5 sm:pl-4 space-y-1">
+        <div class="flex justify-between gap-3"><span class="field-label">Reservation No.</span><span class="font-bold text-red-800">{{ '%05d'|format(document_number) }}</span></div>
+        <div class="flex justify-between gap-3"><span class="field-label">Check-In</span><span class="font-bold text-slate-900">{{ group_checkin_display }}</span></div>
+        <div class="flex justify-between gap-3"><span class="field-label">Check-Out</span><span class="font-bold text-slate-900">{{ group_checkout_display }}</span></div>
+        {% if guest.booking_reference %}<div class="flex justify-between gap-3"><span class="field-label">Referencia</span><span class="text-slate-900">{{ guest.booking_reference }}</span></div>{% endif %}
+      </div>
+    </div>
+
+    <!-- Rooms -->
+    <div class="overflow-x-auto mb-4">
+    <table class="stay-table w-full text-xs">
+      <thead>
+        <tr class="border-b border-slate-800 text-slate-600">
+          <th class="font-semibold text-left py-1 pr-2">Type of Room</th>
+          <th class="font-semibold text-center py-1 px-1">Room</th>
+          <th class="font-semibold text-center py-1 px-1">No. of Rooms</th>
+          <th class="font-semibold text-center py-1 px-1">Pax</th>
+          <th class="font-semibold text-center py-1 px-1">Plan</th>
+          <th class="font-semibold text-right py-1 px-1">Room Rate</th>
+          <th class="font-semibold text-center py-1 px-1">Nights</th>
+          <th class="font-semibold text-right py-1 pl-2">Amount</th>
+        </tr>
+      </thead>
+      {% for l in lines %}
+      <tbody class="border-b border-slate-200">
+        <tr class="font-bold text-slate-900">
+          <td class="pt-2 pr-2 uppercase">{{ l.room_type_label }}</td>
+          <td class="pt-2 px-1 text-center">{{ l.guest.room_number or '—' }}</td>
+          <td class="pt-2 px-1 text-center">1</td>
+          <td class="pt-2 px-1 text-center">{{ l.pax or '' }}</td>
+          <td class="pt-2 px-1 text-center">{{ l.plan }}</td>
+          <td class="pt-2 px-1 text-right whitespace-nowrap">C${{ '{:,.2f}'.format(l.rate) }}</td>
+          <td class="pt-2 px-1 text-center">{{ l.nights }}</td>
+          <td class="pt-2 pl-2 text-right whitespace-nowrap">C${{ '{:,.2f}'.format(l.subtotal) }}</td>
+        </tr>
+        <tr class="text-slate-600">
+          <td class="pr-2 whitespace-nowrap">{{ l.checkin_display }} – {{ l.checkout_display }}</td>
+          <td colspan="3" class="px-1 text-center">{% if l.plan == 'DESI' %}DESAYUNO INCLUIDO{% endif %}</td>
+          <td colspan="4"></td>
+        </tr>
+        <tr class="text-slate-600">
+          <td></td>
+          <td colspan="3" class="px-1 pb-2 text-right">Tax{% if l.guest.tax_exempt %} (exonerado){% endif %}:</td>
+          <td colspan="2" class="px-1 pb-2 text-right font-semibold text-slate-900 whitespace-nowrap">C${{ '{:,.2f}'.format(l.tax) }}</td>
+          <td class="px-1 pb-2 text-right">Subtotal:</td>
+          <td class="pl-2 pb-2 text-right font-semibold text-slate-900 whitespace-nowrap">C${{ '{:,.2f}'.format(l.subtotal) }}</td>
+        </tr>
+      </tbody>
+      {% endfor %}
+    </table>
+    </div>
+
+    <!-- Totals -->
+    <div class="ml-auto max-w-xs text-sm mb-5">
+      <div class="flex justify-between border-t border-slate-800 pt-1"><span class="font-bold text-slate-700">Subtotal:</span><span class="font-bold text-slate-900">C${{ '{:,.2f}'.format(group_subtotal) }}</span></div>
+      <div class="flex justify-between"><span class="font-bold text-slate-700">Taxes:</span><span class="font-bold text-slate-900">C${{ '{:,.2f}'.format(group_tax) }}</span></div>
+      <div class="flex justify-between border border-slate-800 px-2 py-1 mt-1"><span class="font-extrabold text-slate-900">Balance:</span><span class="font-extrabold text-slate-900">C${{ '{:,.2f}'.format(group_total) }}</span></div>
+    </div>
+
+    <div class="mb-3">
+      <p class="field-label underline">Notes:</p>
+      <p class="text-sm text-slate-700 mt-1 min-h-[1.25rem]">{{ guest.observations or '' }}</p>
+    </div>
+
+    {% include '_doc_policies.html' %}
+
+    <p class="text-xs text-slate-400 mt-4">Emitido el {{ issued_display }}{% if reserved_by %} · Reservado por {{ reserved_by }}{% endif %}</p>
+  </div>
+
+<script nonce="{{ csp_nonce }}">
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('closeBtn').addEventListener('click', () => window.close());
+</script>
+</body>
+</html>

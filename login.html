@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arenas Beach Hotel — Iniciar Sesión</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/mobile.css">
+<!-- Installable on phones/tablets ("Agregar a pantalla de inicio"): opens full screen with its own icon -->
+<link rel="manifest" href="/static/manifest.json">
+<link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
+<meta name="theme-color" content="#0f172a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Arenas">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+</style>
+</head>
+<body class="min-h-screen bg-slate-950 flex items-center justify-center px-4">
+
+  <div class="w-full max-w-sm">
+    <div class="text-center mb-8">
+      <div class="inline-flex items-center justify-center bg-white rounded-2xl shadow-lg px-5 py-3.5 mb-4">
+        <img src="/static/logo.png" alt="Arenas Beach Hotel" class="h-16 sm:h-20 w-auto">
+      </div>
+      <p class="text-slate-500 text-sm mt-1">Acceso de personal</p>
+    </div>
+
+    <div class="bg-white/[0.04] border border-white/10 rounded-2xl p-7 backdrop-blur">
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Usuario</label>
+          <input id="username" type="text" autocomplete="username" required
+            class="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/60 focus:border-teal-500/60"
+            placeholder="ej. admin">
+        </div>
+        <div>
+          <label class="block text-xs font-medium text-slate-400 mb-1.5">Contraseña</label>
+          <input id="password" type="password" autocomplete="current-password" required
+            class="w-full bg-slate-900 border border-white/10 rounded-lg px-3 py-2.5 text-sm text-white placeholder-slate-600 focus:outline-none focus:ring-2 focus:ring-teal-500/60 focus:border-teal-500/60"
+            placeholder="••••••••">
+        </div>
+
+        <div id="loginError" class="hidden text-xs text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg px-3 py-2"></div>
+
+        <button type="submit" id="loginBtn"
+          class="w-full bg-teal-600 hover:bg-teal-500 text-white font-semibold text-sm py-2.5 rounded-lg transition">
+          Iniciar Sesión
+        </button>
+      </form>
+    </div>
+  </div>
+
+<script nonce="{{ csp_nonce }}">
+document.getElementById('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const errorEl = document.getElementById('loginError');
+  const btn = document.getElementById('loginBtn');
+  errorEl.classList.add('hidden');
+  btn.disabled = true;
+  btn.textContent = 'Iniciando sesión...';
+
+  try {
+    const resp = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        username: document.getElementById('username').value.trim(),
+        password: document.getElementById('password').value,
+      }),
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      errorEl.textContent = data.error || 'No se pudo iniciar sesión.';
+      errorEl.classList.remove('hidden');
+      btn.disabled = false;
+      btn.textContent = 'Iniciar Sesión';
+      return;
+    }
+    window.location.href = '/';
+  } catch (err) {
+    errorEl.textContent = 'Error de red al contactar el servidor.';
+    errorEl.classList.remove('hidden');
+    btn.disabled = false;
+    btn.textContent = 'Iniciar Sesión';
+  }
+});
+</script>
+</body>
+</html>

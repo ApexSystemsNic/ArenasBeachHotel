@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arenas Beach Hotel — Reservaciones</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/mobile.css">
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  .card { background: white; border: 1px solid #e2e8f0; border-radius: 16px; }
+  .day-cell { aspect-ratio: 1; border-radius: 10px; display: flex; align-items: center; justify-content: center;
+              font-size: 13px; font-weight: 600; cursor: default; transition: transform 0.12s ease, box-shadow 0.12s ease; }
+  .day-cell.pickable { cursor: pointer; }
+  @media (hover: hover) { .day-cell.pickable:hover { transform: translateY(-1px) scale(1.05); box-shadow: 0 4px 10px rgba(15,23,42,0.12); } }
+  .day-cell.selected { outline: 2px solid #0f172a; outline-offset: 2px; }
+  .day-cell.in-range { box-shadow: inset 0 -3px 0 0 #0f172a; }
+  .day-cell.is-today { position: relative; }
+  .day-cell.is-today::after { content: ''; position: absolute; bottom: 3px; width: 4px; height: 4px; border-radius: 999px; background: currentColor; opacity: 0.6; }
+</style>
+</head>
+<body class="text-slate-800 min-h-screen" style="background: linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%);">
+
+<header class="bg-gradient-to-r from-slate-900 to-slate-800 text-white">
+  <div class="max-w-5xl mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center gap-3">
+    <div class="bg-white rounded-lg px-3 py-2 sm:px-4 sm:py-2.5 flex items-center shadow-sm">
+      <img src="/static/logo.png" alt="Arenas Beach Hotel" class="h-10 sm:h-14 w-auto">
+    </div>
+    <p class="text-slate-400 text-xs leading-tight">Reserve<br>su estadía</p>
+  </div>
+</header>
+
+<main class="max-w-5xl mx-auto px-3 sm:px-6 py-4 sm:py-8 grid grid-cols-1 lg:grid-cols-5 gap-6">
+
+  <section class="lg:col-span-3 card p-0 overflow-hidden shadow-sm">
+    <div class="flex items-center justify-between px-5 py-4 bg-gradient-to-r from-slate-900 to-slate-800">
+      <button id="prevMonthBtn" class="w-9 h-9 rounded-lg hover:bg-white/15 text-white text-lg transition">‹</button>
+      <div class="text-center">
+        <h2 id="calendarTitle" class="text-base font-bold text-white tracking-tight"></h2>
+        <div class="flex items-center justify-center gap-1.5 text-[10px] text-slate-400 mt-0.5">
+          <span id="liveSyncDot" class="w-1.5 h-1.5 rounded-full bg-slate-500"></span> Disponibilidad en vivo
+        </div>
+      </div>
+      <button id="nextMonthBtn" class="w-9 h-9 rounded-lg hover:bg-white/15 text-white text-lg transition">›</button>
+    </div>
+
+    <div class="p-5">
+      <div class="grid grid-cols-7 gap-1 sm:gap-1.5 mb-2 text-center text-[11px] font-semibold text-slate-400 uppercase">
+        <div>Dom</div><div>Lun</div><div>Mar</div><div>Mié</div><div>Jue</div><div>Vie</div><div>Sáb</div>
+      </div>
+      <div id="calendarGrid" class="grid grid-cols-7 gap-1 sm:gap-1.5"></div>
+
+      <div class="flex flex-wrap gap-4 mt-5 text-xs text-slate-500">
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-emerald-400 inline-block"></span> Disponible</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-amber-400 inline-block"></span> Día de salida (podría liberarse)</div>
+        <div class="flex items-center gap-1.5"><span class="w-2.5 h-2.5 rounded-full bg-rose-400 inline-block"></span> Totalmente reservado</div>
+      </div>
+      <p class="text-xs text-slate-400 mt-2">Los colores reflejan la disponibilidad del tipo de habitación seleccionado<span class="hidden lg:inline"> a la derecha</span><span class="lg:hidden"> abajo</span>.</p>
+      <p class="text-xs text-slate-400 mt-2">Consejo: haga clic en una fecha disponible para la entrada, luego en una fecha posterior para la salida.</p>
+    </div>
+  </section>
+
+  <section class="lg:col-span-2 card p-5 h-fit">
+    <h2 class="text-lg font-bold text-slate-900 mb-4">Reserve su Estadía</h2>
+
+    <label class="block text-xs font-semibold text-slate-500 mb-1">Tipo de Habitación</label>
+    <select id="roomType" class="w-full border border-slate-300 rounded-md px-2 py-2 text-sm mb-3"></select>
+
+    <div class="grid grid-cols-2 gap-3 mb-3">
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Entrada</label>
+        <input id="checkinDate" type="date" class="w-full border border-slate-300 rounded-md px-2 py-2 text-sm">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-500 mb-1">Salida</label>
+        <input id="checkoutDate" type="date" class="w-full border border-slate-300 rounded-md px-2 py-2 text-sm">
+      </div>
+    </div>
+
+    <div id="priceEstimate" class="text-xs text-slate-500 mb-4"></div>
+
+    <label class="block text-xs font-semibold text-slate-500 mb-1">Nombre Completo</label>
+    <input id="guestName" type="text" placeholder="ej. Maria Gonzalez" class="w-full border border-slate-300 rounded-md px-2 py-2 text-sm mb-3">
+
+    <p class="text-xs text-slate-500 mb-2">Déjenos al menos un <strong>correo</strong> o un <strong>teléfono</strong> para confirmar su reservación.</p>
+    <label for="guestEmail" class="block text-xs font-semibold text-slate-500 mb-1">Correo Electrónico</label>
+    <input id="guestEmail" type="email" autocomplete="email" placeholder="usted@ejemplo.com" class="w-full border border-slate-300 rounded-md px-2 py-2 text-sm mb-3">
+
+    <label for="guestPhone" class="block text-xs font-semibold text-slate-500 mb-1">Teléfono</label>
+    <input id="guestPhone" type="tel" autocomplete="tel" placeholder="+505 8888 8888" class="w-full border border-slate-300 rounded-md px-2 py-2 text-sm mb-4">
+
+    <button id="submitBookingBtn" class="w-full bg-slate-900 hover:bg-slate-800 text-white font-bold py-2.5 rounded-md text-sm">Solicitar Reservación</button>
+    <div id="bookingMsg" class="mt-3 text-xs hidden rounded-md px-2 py-1.5"></div>
+  </section>
+</main>
+
+<script nonce="{{ csp_nonce }}">
+// Native <input type="date"> displays in the browser/OS locale (in Chrome
+// that's the OS setting, ignoring the page's own language) — there's no
+// reliable cross-browser way to force day/month/year on it. So these date
+// fields are plain text boxes that always show/accept DD/MM/YYYY, with
+// `.value` overridden to still behave like a native date input (get/set an
+// ISO yyyy-mm-dd string) so the rest of the code is unaffected.
+function makeDmyDateInput(id) {
+  const el = document.getElementById(id);
+  if (!el || el.dataset.dmyBound) return;
+  el.dataset.dmyBound = '1';
+  el.type = 'text';
+  el.setAttribute('placeholder', 'DD/MM/YYYY');
+  el.setAttribute('inputmode', 'numeric');
+  el.setAttribute('maxlength', '10');
+  el.autocomplete = 'off';
+
+  const native = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value');
+
+  Object.defineProperty(el, 'value', {
+    configurable: true,
+    get() {
+      const raw = native.get.call(el);
+      const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(raw);
+      return m ? `${m[3]}-${m[2]}-${m[1]}` : '';
+    },
+    set(iso) {
+      if (!iso) { native.set.call(el, ''); return; }
+      const [y, m, d] = String(iso).split('-');
+      native.set.call(el, (y && m && d) ? `${d}/${m}/${y}` : '');
+    },
+  });
+
+  el.addEventListener('input', () => {
+    const digits = native.get.call(el).replace(/\D/g, '').slice(0, 8);
+    let out = digits;
+    if (digits.length > 4) out = `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4)}`;
+    else if (digits.length > 2) out = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    native.set.call(el, out);
+  });
+}
+['checkinDate', 'checkoutDate'].forEach(makeDmyDateInput);
+
+let viewYear, viewMonth;
+let roomLabels = {}, roomRates = {};
+let monthAvailability = [];
+
+const today = new Date();
+viewYear = today.getFullYear();
+viewMonth = today.getMonth() + 1;
+
+// `.toISOString()` converts to UTC first, which silently shifts to the next
+// (or previous) local day depending on the browser's time zone — so compute
+// from local Date fields instead.
+function isoLocal(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function todayStr() { return isoLocal(new Date()); }
+
+function fmtDate(iso) {
+  if (!iso) return '';
+  const [y, m, d] = iso.split('-');
+  if (!y || !m || !d) return iso;
+  return `${d}/${m}/${y}`;
+}
+
+async function loadRoomTypes() {
+  const resp = await fetch('/api/public/room-types');
+  const data = await resp.json();
+  roomRates = data.rates;
+  roomLabels = data.labels;
+  const select = document.getElementById('roomType');
+  select.innerHTML = Object.keys(roomLabels).map(key =>
+    `<option value="${key}">${roomLabels[key]} — C$${fmt2(roomRates[key])}/noche</option>`
+  ).join('');
+  updatePriceEstimate();
+}
+
+async function loadCalendar() {
+  const resp = await fetch(`/api/public/availability?year=${viewYear}&month=${viewMonth}`);
+  monthAvailability = await resp.json();
+  renderCalendar();
+}
+
+function colorForDay(day) {
+  // Colored for whichever room type is currently selected — the hotel has
+  // three separate 10-room pools, so a hotel-wide aggregate could show green
+  // on a day where the guest's chosen type is actually sold out.
+  const selectedType = document.getElementById('roomType').value;
+  const remaining = selectedType ? day.remaining_by_type[selectedType] : null;
+  if (remaining === null || remaining === undefined) return day.color;
+  if (remaining > 0) return 'green';
+  return day.is_checkout_day ? 'yellow' : 'red';
+}
+
+function renderCalendar() {
+  const title = new Date(viewYear, viewMonth - 1, 1).toLocaleDateString('es', { month: 'long', year: 'numeric' });
+  document.getElementById('calendarTitle').textContent = title;
+
+  const grid = document.getElementById('calendarGrid');
+  grid.innerHTML = '';
+
+  const firstDay = new Date(viewYear, viewMonth - 1, 1);
+  const startWeekday = firstDay.getDay();
+  for (let i = 0; i < startWeekday; i++) {
+    grid.appendChild(document.createElement('div'));
+  }
+
+  const colorClasses = {
+    green: 'bg-gradient-to-b from-emerald-50 to-emerald-100 text-emerald-800 hover:from-emerald-100 hover:to-emerald-200',
+    yellow: 'bg-gradient-to-b from-amber-50 to-amber-100 text-amber-800',
+    red: 'bg-rose-50 text-rose-300',
+  };
+  const today = todayStr();
+
+  monthAvailability.forEach(day => {
+    // Days already gone can't be booked online: shown gray, not clickable.
+    const past = day.date < today;
+    const color = colorForDay(day);
+    const cell = document.createElement('div');
+    const dayNum = parseInt(day.date.split('-')[2]);
+    const pickable = !past && color !== 'red';
+    cell.className = `day-cell ${past ? 'bg-slate-50 text-slate-300' : colorClasses[color]} ${pickable ? 'pickable' : ''} ${day.date === today ? 'is-today' : ''}`;
+    cell.textContent = dayNum;
+    cell.dataset.date = day.date;
+    if (past) cell.title = 'Fecha pasada';
+    if (pickable) {
+      cell.addEventListener('click', () => handleDayClick(day.date));
+    }
+    grid.appendChild(cell);
+  });
+
+  highlightRange(document.getElementById('checkinDate').value, document.getElementById('checkoutDate').value);
+}
+
+// Two-click date range picker: first click sets check-in, next click on a
+// later date sets check-out. Clicking an earlier-or-equal date restarts the
+// selection from there instead of trying to extend backwards.
+let selectionStart = null;
+
+function handleDayClick(dateStr) {
+  if (!selectionStart || dateStr <= selectionStart) {
+    selectionStart = dateStr;
+    document.getElementById('checkinDate').value = dateStr;
+    document.getElementById('checkoutDate').value = '';
+    highlightRange(dateStr, null);
+  } else {
+    document.getElementById('checkoutDate').value = dateStr;
+    highlightRange(selectionStart, dateStr);
+    selectionStart = null;
+  }
+  updatePriceEstimate();
+}
+
+function highlightRange(startStr, endStr) {
+  document.querySelectorAll('.day-cell').forEach(c => {
+    c.classList.remove('selected', 'in-range');
+    if (!startStr) return;
+    const d = c.dataset.date;
+    if (!d) return;
+    if (d === startStr || d === endStr) {
+      c.classList.add('selected');
+    } else if (endStr && d > startStr && d < endStr) {
+      c.classList.add('in-range');
+    }
+  });
+}
+
+document.getElementById('checkinDate').addEventListener('change', () => {
+  selectionStart = null;
+  highlightRange(document.getElementById('checkinDate').value, document.getElementById('checkoutDate').value);
+});
+document.getElementById('checkoutDate').addEventListener('change', () => {
+  selectionStart = null;
+  highlightRange(document.getElementById('checkinDate').value, document.getElementById('checkoutDate').value);
+});
+
+document.getElementById('prevMonthBtn').addEventListener('click', () => {
+  viewMonth -= 1;
+  if (viewMonth < 1) { viewMonth = 12; viewYear -= 1; }
+  loadCalendar();
+});
+document.getElementById('nextMonthBtn').addEventListener('click', () => {
+  viewMonth += 1;
+  if (viewMonth > 12) { viewMonth = 1; viewYear += 1; }
+  loadCalendar();
+});
+
+// Amounts with thousands separators: 1234567.5 -> "1,234,567.50".
+const NUM2 = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+function fmt2(n) { return NUM2.format(Number(n) || 0); }
+
+function nights() {
+  const ci = document.getElementById('checkinDate').value;
+  const co = document.getElementById('checkoutDate').value;
+  if (!ci || !co) return 0;
+  const d1 = new Date(ci), d2 = new Date(co);
+  return Math.max(Math.round((d2 - d1) / 86400000), 0);
+}
+
+// The real price for those dates: each night's season / weekday rate plus tax.
+let priceRequest = 0;
+async function updatePriceEstimate() {
+  const roomType = document.getElementById('roomType').value;
+  const n = nights();
+  const el = document.getElementById('priceEstimate');
+  if (!roomType || n <= 0) { el.textContent = ''; return; }
+  const ticket = ++priceRequest;
+  const params = new URLSearchParams({ room_type: roomType, checkin_date: document.getElementById('checkinDate').value,
+                                       checkout_date: document.getElementById('checkoutDate').value });
+  const resp = await fetch(`/api/public/quote?${params}`);
+  if (ticket !== priceRequest) return;   // a newer selection already asked
+  if (!resp.ok) { el.textContent = ''; return; }
+  const q = await resp.json();
+  el.textContent = `${q.night_count} noche${q.night_count === 1 ? '' : 's'} · Subtotal C$${fmt2(q.subtotal)} + impuesto (${q.tax_rate}%) C$${fmt2(q.tax)} = Total C$${fmt2(q.total)}`;
+}
+
+document.getElementById('roomType').addEventListener('change', () => { updatePriceEstimate(); renderCalendar(); });
+document.getElementById('checkinDate').addEventListener('change', updatePriceEstimate);
+document.getElementById('checkoutDate').addEventListener('change', updatePriceEstimate);
+
+document.getElementById('checkinDate').value = todayStr();
+const tmr = new Date(); tmr.setDate(tmr.getDate() + 1);
+document.getElementById('checkoutDate').value = isoLocal(tmr);
+// The native date pickers grey out past days too.
+document.getElementById('checkinDate').min = todayStr();
+document.getElementById('checkoutDate').min = isoLocal(tmr);
+
+// Same rules the server applies (app._validate_public_booking), checked here
+// first so the guest sees the problem without a round trip.
+const EMAIL_RE = /^[^@\s]+@[^@\s]+\.[A-Za-z]{2,}$/;
+function bookingProblem(p) {
+  if (!p.name) return 'Por favor ingrese su nombre.';
+  if (!p.checkin_date || !p.checkout_date) return 'Por favor seleccione las fechas de entrada y salida.';
+  if (p.checkin_date < todayStr()) return 'La fecha de entrada no puede ser en el pasado.';
+  if (p.checkout_date <= p.checkin_date) return 'La salida debe ser después de la entrada.';
+  if (p.email && !EMAIL_RE.test(p.email)) return 'El correo electrónico no es válido (ejemplo: usted@ejemplo.com).';
+  if (p.phone && p.phone.replace(/\D/g, '').length < 7) return 'El teléfono debe tener al menos 7 dígitos.';
+  if (!p.email && !p.phone) return 'Ingrese un correo electrónico o un teléfono para poder confirmar su reservación.';
+  return null;
+}
+
+document.getElementById('submitBookingBtn').addEventListener('click', async () => {
+  const msgEl = document.getElementById('bookingMsg');
+  const payload = {
+    name: document.getElementById('guestName').value.trim(),
+    email: document.getElementById('guestEmail').value.trim(),
+    phone: document.getElementById('guestPhone').value.trim(),
+    room_type: document.getElementById('roomType').value,
+    checkin_date: document.getElementById('checkinDate').value,
+    checkout_date: document.getElementById('checkoutDate').value,
+  };
+  const problem = bookingProblem(payload);
+  if (problem) return showMsg(msgEl, problem, false);
+
+  const btn = document.getElementById('submitBookingBtn');
+  btn.disabled = true;
+  btn.textContent = 'Enviando...';
+
+  try {
+    const resp = await fetch('/api/public/book', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+    });
+    const data = await resp.json();
+    if (!resp.ok) {
+      showMsg(msgEl, data.error || 'No se pudo completar la reservación.', false);
+    } else {
+      showMsg(msgEl, `Reservación confirmada para ${data.name} — ${roomLabels[data.room_type]}, ${fmtDate(data.checkin_date)} a ${fmtDate(data.checkout_date)}. ¡Nuestra recepción le estará esperando!`, true);
+      document.getElementById('guestName').value = '';
+      document.getElementById('guestEmail').value = '';
+      document.getElementById('guestPhone').value = '';
+      loadCalendar();
+    }
+  } catch (e) {
+    showMsg(msgEl, 'Error de red al contactar el servidor.', false);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Solicitar Reservación';
+  }
+});
+
+function showMsg(el, text, ok) {
+  el.textContent = text;
+  el.className = `mt-3 text-xs rounded-md px-2 py-1.5 ${ok ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-rose-50 text-rose-700 border border-rose-200'}`;
+}
+
+function flashLiveSyncDot() {
+  const dot = document.getElementById('liveSyncDot');
+  if (!dot) return;
+  dot.classList.remove('bg-slate-300');
+  dot.classList.add('bg-emerald-500');
+  setTimeout(() => { dot.classList.remove('bg-emerald-500'); dot.classList.add('bg-slate-300'); }, 1200);
+}
+
+// Pushed the instant a booking/check-in/checkout/cancellation happens
+// anywhere — on the front-desk dashboard or this page in another tab.
+const liveEvents = new EventSource('/api/events/availability');
+liveEvents.onmessage = () => {
+  flashLiveSyncDot();
+  loadCalendar();
+};
+
+loadRoomTypes();
+loadCalendar();
+</script>
+</body>
+</html>
