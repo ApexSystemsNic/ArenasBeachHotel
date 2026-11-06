@@ -1,0 +1,27 @@
+{# What the rate includes, restaurant/bar hours and the hotel's policies —
+   printed on both the guest confirmation and the agency rooming list. The
+   texts live in hotel_policies.py (shared with the Word export). #}
+<div class="policies border border-slate-300 rounded-md p-4 text-[11px] leading-snug text-slate-700">
+  <p class="font-semibold text-slate-900">Tarifa incluye</p>
+  {% for line in policies.RATE_INCLUDES %}<p>{{ line }}</p>{% endfor %}
+
+  <p class="font-semibold text-slate-900 mt-3">HORARIOS RESTAURANTE Y BAR</p>
+  {% for line in policies.HOURS %}<p>{{ line }}</p>{% endfor %}
+
+  <p class="font-bold text-slate-900 text-center mt-3 mb-1">POLÍTICAS GENERALES</p>
+  <ol class="space-y-0.5">
+    {% for line in policies.GENERAL %}<li><strong>{{ loop.index }}.</strong> {{ line }}</li>{% endfor %}
+  </ol>
+  <p class="mt-1">{{ policies.GENERAL_ACCEPTANCE }}</p>
+
+  <p class="font-bold text-slate-900 text-center mt-3 mb-1">POLÍTICAS DE RESERVACIÓN</p>
+  <ol class="space-y-0.5">
+    {% for line in policies.RESERVATION %}<li><strong>{{ loop.index }}.</strong> {{ line }}</li>{% endfor %}
+  </ol>
+
+  <p class="font-bold text-slate-900 text-center mt-3 mb-1 border-t border-slate-300 pt-2">POLÍTICAS DE CAMBIOS Y CANCELACIÓN DE RESERVACIONES</p>
+  <ol class="space-y-0.5">
+    {% for line in policies.cancellation(hotel_email) %}<li><strong>{{ loop.index }}.</strong> {{ line }}</li>{% endfor %}
+  </ol>
+  <p class="mt-2"><strong>RESTRICCIONES:</strong> {{ policies.RESTRICTIONS }}</p>
+</div>

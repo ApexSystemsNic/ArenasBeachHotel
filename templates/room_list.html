@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{ title }} — {{ date_display }}</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="stylesheet" href="/static/mobile.css">
+<style>
+  body { font-family: 'Segoe UI', system-ui, sans-serif; }
+  @page { size: landscape; margin: 12mm; }
+  @media print {
+    .no-print { display: none !important; }
+    body { background: white !important; padding: 0 !important; }
+    .doc { box-shadow: none !important; margin: 0 !important; max-width: none !important; }
+  }
+</style>
+</head>
+<body class="min-h-screen bg-slate-100 py-4 sm:py-8 px-2 sm:px-4">
+
+  <div class="max-w-5xl mx-auto mb-4 flex flex-wrap justify-end gap-2 no-print">
+    <button id="printBtn" class="bg-slate-900 hover:bg-slate-800 text-white text-sm font-semibold px-4 py-2 rounded-md">Imprimir / Guardar como PDF</button>
+    <a href="/export/room-list.xlsx?{{ request.query_string.decode() }}" class="border border-emerald-300 text-emerald-700 hover:bg-emerald-50 text-sm font-semibold px-4 py-2 rounded-md">Descargar Excel</a>
+    <button id="closeBtn" class="border border-slate-300 text-slate-600 text-sm font-semibold px-4 py-2 rounded-md">Cerrar</button>
+  </div>
+
+  <div class="doc max-w-5xl mx-auto bg-white rounded-xl shadow-lg p-4 sm:p-8 text-sm">
+    <div class="flex items-end justify-between border-b-2 border-slate-800 pb-3 mb-4 gap-4 flex-wrap">
+      <div class="flex items-center gap-3">
+        <img src="/static/logo.png" alt="Arenas Beach Hotel" class="h-12 w-auto">
+        <div>
+          <h1 class="text-lg font-extrabold text-slate-900 leading-tight">{{ title }}</h1>
+          <p class="text-xs text-slate-500">{{ date_display }}{% if agency %} · Agencia: <strong class="text-slate-700">{{ agency.name }}</strong>{% endif %}</p>
+        </div>
+      </div>
+      <div class="text-right text-xs text-slate-500">
+        <p><strong class="text-slate-800 text-base">{{ totals.count }}</strong> habitación{{ '' if totals.count == 1 else 'es' }}{% if totals.pax %} · {{ totals.pax }} pax{% endif %}</p>
+        <p>Emitido el {{ issued_display }}</p>
+      </div>
+    </div>
+
+    {% if guests %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-xs">
+        <thead>
+          <tr class="text-left text-slate-500 border-b border-slate-300">
+            <th class="py-2 pr-2">Hab.</th><th class="py-2 pr-2">Huésped</th><th class="py-2 pr-2">Tipo</th>
+            <th class="py-2 pr-2">Agencia</th><th class="py-2 pr-2">Entrada</th><th class="py-2 pr-2">Salida</th>
+            <th class="py-2 pr-2 text-center">Pax</th><th class="py-2 pr-2">Tarifa</th>
+            <th class="py-2 pr-2 text-right">Subtotal</th><th class="py-2 pr-2 text-right">Impuesto</th><th class="py-2 text-right">Total</th>
+            <th class="py-2 pl-2 no-print">Estado</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for g in guests %}
+          <tr class="border-b border-slate-100 align-top">
+            <td class="py-1.5 pr-2 font-bold">{{ g.room_number or '—' }}</td>
+            <td class="py-1.5 pr-2 font-semibold text-slate-900">{{ g.name }}{% if g.observations %}<div class="font-normal text-slate-400 italic">{{ g.observations }}</div>{% endif %}</td>
+            <td class="py-1.5 pr-2">{{ room_labels.get(g.room_type, g.room_type) }}</td>
+            <td class="py-1.5 pr-2">{{ g.agency or 'Directo' }}</td>
+            <td class="py-1.5 pr-2 whitespace-nowrap">{{ g.checkin_date[8:10] }}/{{ g.checkin_date[5:7] }}</td>
+            <td class="py-1.5 pr-2 whitespace-nowrap">{{ g.checkout_date[8:10] }}/{{ g.checkout_date[5:7] }}</td>
+            <td class="py-1.5 pr-2 text-center">{{ ((g.adults or 0) + (g.children or 0)) or '' }}</td>
+            <td class="py-1.5 pr-2">{{ rate_labels.get(g.rate_type, '') }}</td>
+            <td class="py-1.5 pr-2 text-right">C${{ '{:,.2f}'.format(g.room_subtotal or 0) }}</td>
+            <td class="py-1.5 pr-2 text-right">{% if g.tax_exempt %}Exon.{% else %}C${{ '{:,.2f}'.format(g.tax_amount or 0) }}{% endif %}</td>
+            <td class="py-1.5 text-right font-semibold">C${{ '{:,.2f}'.format(g.total_amount or 0) }}</td>
+            <td class="py-1.5 pl-2 no-print">{{ {'reserved': 'Confirmada', 'checked_in': 'En Casa', 'checked_out': 'Salió'}.get(g.status, g.status) }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+        <tfoot>
+          <tr class="border-t-2 border-slate-800 font-bold text-slate-900">
+            <td colspan="8" class="py-2">Totales</td>
+            <td class="py-2 pr-2 text-right">C${{ '{:,.2f}'.format(totals.subtotal) }}</td>
+            <td class="py-2 pr-2 text-right">C${{ '{:,.2f}'.format(totals.tax) }}</td>
+            <td class="py-2 text-right">C${{ '{:,.2f}'.format(totals.total) }}</td>
+            <td class="no-print"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-center text-slate-400 py-10">No hay {{ title|lower }} para esta fecha.</p>
+    {% endif %}
+  </div>
+
+<script nonce="{{ csp_nonce }}">
+  document.getElementById('printBtn').addEventListener('click', () => window.print());
+  document.getElementById('closeBtn').addEventListener('click', () => window.close());
+</script>
+</body>
+</html>

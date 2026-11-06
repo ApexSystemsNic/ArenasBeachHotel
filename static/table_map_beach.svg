@@ -1,0 +1,49 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMid slice">
+  <!-- Beach backdrop for the table map: sea on the left, foam line, wet sand,
+       dry sand. Vector, so it stays sharp at any canvas size. -->
+  <defs>
+    <linearGradient id="sea" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#1b8fa6"/>
+      <stop offset="0.55" stop-color="#3fb8c4"/>
+      <stop offset="1" stop-color="#8fdad6"/>
+    </linearGradient>
+    <linearGradient id="sand" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#d9b77e"/>
+      <stop offset="0.25" stop-color="#e8cb95"/>
+      <stop offset="1" stop-color="#f1dcb0"/>
+    </linearGradient>
+    <filter id="grain" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="7"/>
+      <feColorMatrix values="0 0 0 0 0.45  0 0 0 0 0.33  0 0 0 0 0.18  0 0 0 0.16 0"/>
+    </filter>
+    <filter id="ripples" x="0" y="0" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.012 0.05" numOctaves="3" seed="3"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.22 0"/>
+    </filter>
+    <filter id="soft"><feGaussianBlur stdDeviation="6"/></filter>
+  </defs>
+
+  <!-- dry sand everywhere, with fine grain -->
+  <rect width="1600" height="900" fill="url(#sand)"/>
+  <rect width="1600" height="900" filter="url(#grain)"/>
+
+  <!-- wet sand just above the waterline -->
+  <path d="M0 0 H470 C430 120 500 220 455 340 C415 450 490 560 450 680 C420 780 470 860 445 900 H0 Z"
+        fill="#c9a266" opacity="0.55" filter="url(#soft)"/>
+
+  <!-- sea -->
+  <path d="M0 0 H380 C340 110 410 210 365 330 C325 440 400 550 360 670 C330 770 380 850 355 900 H0 Z"
+        fill="url(#sea)"/>
+  <path d="M0 0 H380 C340 110 410 210 365 330 C325 440 400 550 360 670 C330 770 380 850 355 900 H0 Z"
+        filter="url(#ripples)"/>
+
+  <!-- foam: a bright main line plus a lacy trailing band -->
+  <path d="M380 0 C340 110 410 210 365 330 C325 440 400 550 360 670 C330 770 380 850 355 900"
+        fill="none" stroke="#ffffff" stroke-width="22" stroke-linecap="round" opacity="0.9" filter="url(#soft)"/>
+  <path d="M380 0 C340 110 410 210 365 330 C325 440 400 550 360 670 C330 770 380 850 355 900"
+        fill="none" stroke="#ffffff" stroke-width="7" stroke-linecap="round"/>
+  <path d="M335 0 C300 120 360 215 322 335 C286 445 354 555 316 675 C289 775 334 850 312 900"
+        fill="none" stroke="#f2fdfd" stroke-width="16" opacity="0.5" filter="url(#soft)"/>
+  <path d="M275 0 C245 125 295 220 263 340 C233 450 290 560 257 680 C235 780 273 852 255 900"
+        fill="none" stroke="#f2fdfd" stroke-width="12" opacity="0.3" filter="url(#soft)"/>
+</svg>

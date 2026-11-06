@@ -1,0 +1,12 @@
+{# Hotel letterhead shared by the printed guest documents. #}
+<div class="flex items-start justify-between gap-4 border-b-2 border-slate-800 pb-3 mb-3">
+  <img src="/static/logo.png" alt="Arenas Beach Hotel" class="h-16 w-auto">
+  <div class="text-right text-xs text-slate-600 leading-snug">
+    <p class="font-extrabold italic text-slate-900 text-lg leading-tight">ARENAS BEACH HOTEL</p>
+    <p>{{ hotel_legal_name }}</p>
+    <p>{{ hotel_address }}</p>
+    {% if hotel_phone %}<p class="font-semibold text-slate-800">Tel: {{ hotel_phone }}</p>{% endif %}
+    <p>E-mail: {{ hotel_email }}</p>
+    <p>Web: {{ hotel_web }}</p>
+  </div>
+</div>
