@@ -3878,8 +3878,7 @@ def receipt_print_lines(view):
     if r['sign']:
         if r['room_fields']:
             sign_block += [{'t': ''}, {'t': '______________________________', 'a': 'c'}, {'t': 'Habitación - Room', 'a': 'c'},
-                           {'t': '______________________________', 'a': 'c'}, {'t': 'Nombre - Name', 'a': 'c'},
-                           {'t': '______________________________', 'a': 'c'}, {'t': 'Tips', 'a': 'c'}]
+                           {'t': '______________________________', 'a': 'c'}, {'t': 'Nombre - Name', 'a': 'c'}]
         sign_block += [{'t': ''}, {'t': '______________________________', 'a': 'c'}, {'t': 'Firma - Signature', 'a': 'c'}]
     authorize = [{'t': 'AUTORIZO PARA CARGAR A MI CUENTA EL IMPORTE ARRIBA INDICADO', 'a': 'c'}]
 

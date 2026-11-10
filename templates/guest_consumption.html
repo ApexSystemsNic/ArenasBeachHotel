@@ -26,7 +26,8 @@
   @media print {
     body { background: #fff; }
     .bar { display: none; }
-    .ticket { width: 62mm; margin: 0 0 0 2mm; padding: 0; }
+    /* the printer can't print the first ~4 mm of the roll: start well inside it */
+    .ticket { width: 62mm; margin: 0 0 0 7mm; padding: 0; }
   }
 </style>
 </head>
