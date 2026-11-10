@@ -2184,7 +2184,8 @@ def api_checkout_order(order_id):
     payment_method = data.get('payment_method')
     try:
         order = db.close_order(order_id, payment_method=payment_method, closed_by=session['user_id'],
-                               amount_tendered=data.get('amount_tendered'))
+                               amount_tendered=data.get('amount_tendered'), payments=data.get('payments'),
+                               reference=data.get('reference'))
     except ValueError as e:
         return jsonify({'error': str(e)}), 400
     printing.notify()

@@ -106,14 +106,18 @@ def generate_report(start_date, end_date):
     total_room_revenue = sum(c['room_subtotal'] or 0 for c in checkouts)
     total_room_tax = sum(c['tax_amount'] or 0 for c in checkouts)
 
-    by_method = {'cash': 0.0, 'card': 0.0, 'room_charge': 0.0}
+    by_method = {'cash': 0.0, 'card': 0.0, 'deposit': 0.0, 'room_charge': 0.0}
     # Master accounts collect nothing; report what they were worth instead.
     courtesy_value = {'breakfast': 0.0, 'owners': 0.0}
     for o in orders:
         if o['payment_method'] == 'house':
             courtesy_value[o['guest_type']] = courtesy_value.get(o['guest_type'], 0.0) + o['subtotal']
             continue
-        by_method[o['payment_method']] = by_method.get(o['payment_method'], 0.0) + o['amount_collected']
+        # a split bill counts in each of its payment methods
+        parts = ([(p['method'], p['amount']) for p in o.get('payments') or []] if o['payment_method'] == 'mixed'
+                 else [(o['payment_method'], o['amount_collected'])])
+        for method, amount in parts:
+            by_method[method] = by_method.get(method, 0.0) + amount
     total_restaurant_revenue = sum(by_method.values())
 
     summary_rows = [
@@ -124,6 +128,7 @@ def generate_report(start_date, end_date):
         ('Órdenes Canceladas (ver hoja)', len(cancelled_orders)),
         ('Ingresos de Restaurante — Efectivo', round(by_method['cash'], 2)),
         ('Ingresos de Restaurante — Tarjeta', round(by_method['card'], 2)),
+        ('Ingresos de Restaurante — Depósito', round(by_method['deposit'], 2)),
         ('Ingresos de Restaurante — Cargado a Habitación', round(by_method['room_charge'], 2)),
         ('Ingresos Totales de Restaurante', round(total_restaurant_revenue, 2)),
         ('Gran Total sin impuesto (Habitaciones + Restaurante)', round(total_room_revenue + total_restaurant_revenue, 2)),
@@ -177,7 +182,9 @@ def generate_report(start_date, end_date):
             o['server_name'],
             {'hotel_guest': 'Huésped del Hotel', 'walk_in': 'Pase de Día'}.get(o['guest_type'], 'Cliente Externo'),
             target, o['subtotal'], o['credit_applied'], o['balance_due'],
-            PAYMENT_METHOD_LABELS_ES.get(o['payment_method'], o['payment_method']), o['amount_collected'],
+            (' + '.join(PAYMENT_METHOD_LABELS_ES[p['method']] for p in o.get('payments') or [])
+             if o['payment_method'] == 'mixed' else PAYMENT_METHOD_LABELS_ES.get(o['payment_method'], o['payment_method'])),
+            o['amount_collected'],
         ])
         for col in (7, 8, 9, 11):
             ws3.cell(row=ws3.max_row, column=col).number_format = CURRENCY_FMT

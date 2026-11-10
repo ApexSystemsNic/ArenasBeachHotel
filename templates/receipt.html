@@ -108,8 +108,11 @@
   </table>
   <div class="rule"></div>
   <div class="row"><span></span><span>Subtotal a Cobrar: {{ '{:,.2f}'.format(r.subtotal) }}</span></div>
-  {% if r.day_pass_minimum %}
-  <div class="row small"><span>Pase de día (consumo mínimo)</span><span>{{ '{:,.2f}'.format(r.day_pass_minimum) }}</span></div>
+  {% if r.day_pass %}
+  <div class="row small"><span>Pase de día (consumo mínimo)</span><span>{{ '{:,.2f}'.format(r.day_pass.credit) }}</span></div>
+  {% if r.day_pass.unused %}
+  <div class="row small"><span>Crédito de pase no consumido</span><span>{{ '{:,.2f}'.format(r.day_pass.unused) }}</span></div>
+  {% endif %}
   {% endif %}
   <div class="rule"></div>
   <div class="row" style="font-size:12px"><span>A Pagar:</span><span>{{ '{:,.2f}'.format(r.to_pay) }}</span><span>(C$ )</span></div>
@@ -118,9 +121,12 @@
   <table class="small" style="font-size:10px; margin-top:4px">
     <thead><tr><th>Forma de Pago</th><th class="r">Entregado</th><th class="r">Cobrado</th></tr></thead>
     <tbody>
-      <tr><td>{{ r.method_label }}</td>
-          <td class="r">{{ '{:,.2f}'.format(r.tendered) if r.tendered is not none else '' }}</td>
-          <td class="r">{{ '{:,.2f}'.format(r.to_pay) }}</td></tr>
+      {% for p in r.payments %}
+      <tr><td>{{ p.label }}</td>
+          <td class="r">{{ '{:,.2f}'.format(p.tendered) if p.tendered is not none else '' }}</td>
+          <td class="r">{{ '{:,.2f}'.format(p.amount) }}</td></tr>
+      {% if p.reference %}<tr><td colspan="3">{{ p.reference }}</td></tr>{% endif %}
+      {% endfor %}
       {% if r.change %}
       <tr><td>Vuelto</td><td></td><td class="r">{{ '{:,.2f}'.format(r.change) }}</td></tr>
       {% endif %}
