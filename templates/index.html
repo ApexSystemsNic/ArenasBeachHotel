@@ -2855,7 +2855,8 @@ const isPlainLine = (t) => !t.sides && !t.doneness && !t.notes;
 function addToTicket(item, opts = null) {
   if (editingOrderData) { liveAddOrIncrementItem(item, opts); return; }
   const plain = !opts || isPlainLine(opts);
-  const existing = plain && ticket.find(t => t.name === item.name && isPlainLine(t));
+  // an included drink stays its own line: a second coffee may be charged
+  const existing = plain && ticket.find(t => t.name === item.name && isPlainLine(t) && !t.included);
   if (existing) existing.quantity += 1;
   else ticket.push({ name: item.name, unit_price: item.price, quantity: 1, included: false,
                      sides: opts?.sides || null, doneness: opts?.doneness || null, notes: opts?.notes || null });
@@ -2951,7 +2952,11 @@ function renderTicket() {
         <span class="w-5 text-center text-xs font-semibold">${t.quantity}</span>
         <button type="button" class="incLineBtn w-6 h-6 rounded border border-slate-300 text-slate-600 font-bold text-xs hover:bg-slate-100">+</button>
       </div>
-      ${lineIsIncluded(t) ? '<span class="text-[10px] font-bold rounded px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700" title="Desayuno incluido del huésped: no se cobra">Incluido</span>' : ''}
+      ${showIncludedToggle(t)
+        ? `<button type="button" class="inclBtn text-[10px] font-bold rounded px-1.5 py-0.5 border ${t.included
+            ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-white border-slate-300 text-slate-500 hover:bg-slate-50'}"
+            aria-pressed="${t.included ? 'true' : 'false'}" title="¿Va incluido en el desayuno del huésped?">${t.included ? '✓ Incluido' : 'Incluido'}</button>`
+        : lineIsIncluded(t) ? '<span class="text-[10px] font-bold rounded px-1.5 py-0.5 bg-emerald-50 border border-emerald-200 text-emerald-700" title="Desayuno incluido del huésped: no se cobra">Incluido</span>' : ''}
       <span class="w-16 text-right font-semibold ${lineIsIncluded(t) ? 'text-emerald-700' : ''}">C$${fmt2(lineAmount(t))}</span>
       <button class="text-rose-500 text-xs removeBtn">✕</button>
     `;
@@ -2970,6 +2975,20 @@ function renderTicket() {
         editingOrderData = data;
       } else {
         ticket[idx].notes = note.trim() || null;
+      }
+      renderTicket();
+    });
+    row.querySelector('.inclBtn')?.addEventListener('click', async () => {
+      if (editingOrderData) {
+        const resp = await fetch(`/api/orders/${currentEditingOrderId}/items/${t.id}/included`, {
+          method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ included: !t.included })
+        });
+        const data = await resp.json();
+        if (!resp.ok) return alert(data.error || 'No se pudo cambiar.');
+        editingOrderData = data;
+        loadOrders();
+      } else {
+        ticket[idx].included = !ticket[idx].included;
       }
       renderTicket();
     });
@@ -3021,7 +3040,25 @@ if ('IntersectionObserver' in window) {
 function lineIsIncluded(t) {
   if (editingOrderData) return !!t.included;
   const name = t.name || t.item_name;
-  return guestType === 'hotel_guest' && menuItems.some(m => m.name === name && m.section === 'desayunos');
+  return guestType === 'hotel_guest' && (!!t.included || menuItems.some(m => m.name === name && m.section === 'desayunos'));
+}
+
+// Coffee, tea, juices and milks: the waiter marks them as part of the
+// guest's included breakfast (or not) with the "Incluido" button.
+const BREAKFAST_DRINK_WORDS = ['cafe', 'te', 'jugo', 'jugos', 'leche', 'leches'];
+function isBreakfastDrink(name) {
+  const plain = (name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+  return BREAKFAST_DRINK_WORDS.includes(plain.split(/[^a-z]+/)[0]);
+}
+
+// The tab being built or edited belongs to a hotel guest.
+function ticketIsHotelGuest() {
+  return editingOrderData ? editingOrderData.guest_type === 'hotel_guest' : guestType === 'hotel_guest';
+}
+
+// Show the drink's button at breakfast time, or whenever it's already on.
+function showIncludedToggle(t) {
+  return ticketIsHotelGuest() && isBreakfastDrink(t.name || t.item_name) && (isBreakfastTime() || !!t.included);
 }
 
 function lineAmount(t) {
@@ -3160,7 +3197,8 @@ function startEditOrder(order) {
 
 async function liveAddOrIncrementItem(item, opts = null) {
   const plain = !opts || isPlainLine(opts);
-  const existingLine = plain && editingOrderData.items.find(i => i.item_name === item.name && isPlainLine(i));
+  const existingLine = plain && editingOrderData.items.find(i => i.item_name === item.name && isPlainLine(i)
+                                                            && !(i.included && isBreakfastDrink(i.item_name)));
   if (existingLine) {
     await liveSetItemQuantity(existingLine.id, existingLine.quantity + 1);
     return;
@@ -3225,7 +3263,8 @@ document.getElementById('submitOrderBtn').addEventListener('click', async () => 
   if (ticket.length === 0) return showMsg(msgEl, 'Agregue al menos un artículo a la orden.', false);
 
   const items = ticket.map(t => ({ name: t.name, quantity: t.quantity, unit_price: t.unit_price,
-                                   sides: t.sides, doneness: t.doneness, notes: t.notes }));
+                                   sides: t.sides, doneness: t.doneness, notes: t.notes,
+                                   included: guestType === 'hotel_guest' && !!t.included }));
 
   // Included breakfast: goes on today's Desayunos account under its room.
   if (guestType === 'breakfast') {

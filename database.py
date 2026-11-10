@@ -3339,10 +3339,24 @@ def _priced_order_items(conn, items):
             conn.close()
             raise
         # A breakfast dish is always included for a hotel guest (only their tab
-        # applies it, in _insert_order_line); the device can't switch it.
+        # applies it, in _insert_order_line); the device can't switch it. A
+        # breakfast drink (coffee, tea, juice, milk) is included when the
+        # waiter marks it so.
+        included = menu_item['section'] == 'desayunos' or (
+            bool(i.get('included')) and is_breakfast_drink(menu_item['name']))
         priced.append({'name': menu_item['name'], 'quantity': quantity, 'unit_price': menu_item['price'],
-                       'included': menu_item['section'] == 'desayunos', **options})
+                       'included': included, **options})
     return priced
+
+
+# Drinks a waiter may mark as part of a hotel guest's included breakfast.
+BREAKFAST_DRINK_WORDS = ('cafe', 'te', 'jugo', 'jugos', 'leche', 'leches')
+
+
+def is_breakfast_drink(name):
+    plain = unicodedata.normalize('NFD', name or '').encode('ascii', 'ignore').decode().lower()
+    first = re.split(r'[^a-z]+', plain.strip())[0] if plain.strip() else ''
+    return first in BREAKFAST_DRINK_WORDS
 
 
 def _dish_options(menu_item, line):
