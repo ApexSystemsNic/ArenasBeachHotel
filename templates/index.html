@@ -3056,9 +3056,11 @@ function ticketIsHotelGuest() {
   return editingOrderData ? editingOrderData.guest_type === 'hotel_guest' : guestType === 'hotel_guest';
 }
 
-// Show the drink's button at breakfast time, or whenever it's already on.
+// The drink's button shows until 11:00 a.m.; after that a drink already
+// marked keeps its "Incluido" badge but can't be switched.
+const INCLUDED_DRINK_END_HOUR = 11;
 function showIncludedToggle(t) {
-  return ticketIsHotelGuest() && isBreakfastDrink(t.name || t.item_name) && (isBreakfastTime() || !!t.included);
+  return ticketIsHotelGuest() && isBreakfastDrink(t.name || t.item_name) && new Date().getHours() < INCLUDED_DRINK_END_HOUR;
 }
 
 function lineAmount(t) {
