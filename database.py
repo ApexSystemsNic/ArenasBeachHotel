@@ -3350,7 +3350,7 @@ def _priced_order_items(conn, items):
 
 
 # Drinks a waiter may mark as part of a hotel guest's included breakfast.
-BREAKFAST_DRINK_WORDS = ('cafe', 'te', 'jugo', 'jugos', 'leche', 'leches')
+BREAKFAST_DRINK_WORDS = ('cafe', 'te', 'jugo', 'jugos', 'leche', 'leches', 'fun')   # 'fun' = Fun C
 
 
 def is_breakfast_drink(name):

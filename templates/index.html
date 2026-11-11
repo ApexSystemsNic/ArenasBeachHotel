@@ -2606,7 +2606,10 @@ function isBreakfastTime() {
   return new Date().getHours() < BREAKFAST_END_HOUR;
 }
 
+// The whole menu, breakfasts included, shows at any hour (the hotel asked
+// not to hide the breakfasts); in the morning they just come first.
 function sectionVisibleNow(key) {
+  return true;
   if (menuShowOtherPeriod) return true;
   // Registering an included breakfast on the Desayunos account is breakfast service at any hour.
   if (isBreakfastTime() || guestType === 'breakfast') {
@@ -2620,6 +2623,8 @@ function sectionVisibleNow(key) {
 function renderMenuPeriodButton() {
   const btn = document.getElementById('menuPeriodBtn');
   if (!btn) return;
+  btn.classList.add('hidden');   // nothing is hidden, so nothing to bring back
+  return;
   const breakfast = isBreakfastTime() || guestType === 'breakfast';
   btn.textContent = breakfast ? (menuShowOtherPeriod ? '🍳 Solo desayunos' : '📋 Ver todo el menú')
                               : (menuShowOtherPeriod ? '✕ Ocultar desayunos' : '🍳 Ver desayunos');
@@ -2639,6 +2644,8 @@ function renderMenuTimeBanner() {
   renderMenuPeriodButton();
   const box = document.getElementById('menuTimeBanner');
   if (!box) return;
+  box.innerHTML = '';
+  return;
   const breakfast = isBreakfastTime() || guestType === 'breakfast';
   const [text, button] = breakfast
     ? (menuShowOtherPeriod ? ['📋 Mostrando todo el menú.', 'Solo desayunos y bebidas']
@@ -3045,7 +3052,7 @@ function lineIsIncluded(t) {
 
 // Coffee, tea, juices and milks: the waiter marks them as part of the
 // guest's included breakfast (or not) with the "Incluido" button.
-const BREAKFAST_DRINK_WORDS = ['cafe', 'te', 'jugo', 'jugos', 'leche', 'leches'];
+const BREAKFAST_DRINK_WORDS = ['cafe', 'te', 'jugo', 'jugos', 'leche', 'leches', 'fun'];   // 'fun' = Fun C
 function isBreakfastDrink(name) {
   const plain = (name || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
   return BREAKFAST_DRINK_WORDS.includes(plain.split(/[^a-z]+/)[0]);
@@ -3056,11 +3063,9 @@ function ticketIsHotelGuest() {
   return editingOrderData ? editingOrderData.guest_type === 'hotel_guest' : guestType === 'hotel_guest';
 }
 
-// The drink's button shows until 11:00 a.m.; after that a drink already
-// marked keeps its "Incluido" badge but can't be switched.
-const INCLUDED_DRINK_END_HOUR = 11;
+// The drink's button shows at any hour on a hotel guest's tab.
 function showIncludedToggle(t) {
-  return ticketIsHotelGuest() && isBreakfastDrink(t.name || t.item_name) && new Date().getHours() < INCLUDED_DRINK_END_HOUR;
+  return ticketIsHotelGuest() && isBreakfastDrink(t.name || t.item_name);
 }
 
 function lineAmount(t) {
